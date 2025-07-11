@@ -12,12 +12,6 @@ interface AnswerFeedback {
   answer: string;
 }
 
-interface Category {
-  id: number;
-  name: string;
-  questions: Question[];
-}
-
 export default function Game() {
   const {
     socket,
@@ -116,7 +110,7 @@ export default function Game() {
     submitAnswer(answerInput);
   };
 
-  const isCurrentPlayer = currentPlayerId == socket?.id;
+  const isCurrentPlayer = currentPlayerId === socket?.id;
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
