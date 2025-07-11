@@ -30,7 +30,7 @@ jobs:
           npm install
       - name: Build
         run: |
-          npm run build
+          npm run --workspaces build
       - name: Setup Nginx
         run: |
           cat << EOF > rosti.nginx.conf
