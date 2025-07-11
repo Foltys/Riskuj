@@ -1,61 +1,23 @@
+import { categories, Category, Question } from "./questions";
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
-import { categories, Category, Question } from "./questions";
+import leven from "leven";
+
+const PORT = process.env.SERVER_PORT || "3001";
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: `*`,
     methods: ["GET", "POST"],
   },
 });
 
 app.use(cors());
 app.use(express.json());
-
-// Mock data for testing
-const mockCategories = [
-  {
-    id: 1,
-    name: "Category 1",
-    questions: [
-      {
-        id: 1,
-        text: "What is the capital of France?",
-        answer: "Paris",
-        points: 100,
-      },
-      { id: 2, text: "What is 2 + 2?", answer: "4", points: 200 },
-      {
-        id: 3,
-        text: "What is the largest planet in our solar system?",
-        answer: "Jupiter",
-        points: 500,
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "Category 2",
-    questions: [
-      {
-        id: 4,
-        text: "Who painted the Mona Lisa?",
-        answer: "Leonardo da Vinci",
-        points: 1000,
-      },
-      {
-        id: 5,
-        text: "What is the chemical symbol for gold?",
-        answer: "Au",
-        points: 2000,
-      },
-    ],
-  },
-];
 
 interface Player {
   id: string;
@@ -118,7 +80,7 @@ io.on("connection", (socket) => {
 
     try {
       // Fetch questions from the new API endpoint
-      const response = await fetch("http://localhost:3001/api/questions");
+      const response = await fetch(`http://localhost:${PORT}/api/questions`);
       const categories = await response.json();
 
       game.categories = categories;
@@ -190,7 +152,10 @@ io.on("connection", (socket) => {
 
     if (question) {
       const isCorrect =
-        answer.toLowerCase().trim() === question.answer.toLowerCase().trim();
+        leven(
+          answer.toLowerCase().trim(),
+          question.answer.toLowerCase().trim()
+        ) <= 2;
 
       if (isCorrect) {
         const player = game.players.find((p) => p.id === socket.id);
@@ -269,8 +234,6 @@ app.get("/api/questions", (req, res) => {
   res.json(categoriesWithQuestions);
 });
 
-const PORT = process.env.PORT || 3001;
-
-httpServer.listen({ port: PORT, host: "192.168.1.103" }, () => {
-  console.log(`Server running at http://192.168.1.103:${PORT}`);
+httpServer.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
 });
