@@ -1,0 +1,56 @@
+# .github/workflows/rosti_deploy.yml
+
+name: Deploy into Roští.cz
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HOST: ssh.rosti.cz
+      USER: app
+      PORT: 10481
+      NODE_VERSION: 23.6.0
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "v23.6.0"
+      - uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.ROSTI_DEPLOY_SSH_KEY }}
+      - name: Setup hostkey
+        run: |
+          echo "ssh.rosti.cz ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCD/uV9e9NJ+nSqkYEXr+V3JLs2w/V4dF3Gq4Zd1qF7WyuafUhRfEhsKIM8fg1bINHgwzScQhHohNtv0IB/ToIyOwve+vQjGNhegw1gRbi7isUtcidj2RFTlGW/SosA+skHPVJR8A5eFOOuSx0RhzEz0PIiy1cK+/afh5akFiRdA7J8lQjGXQNy4VoDpwW9n8E0mMS5qddQhUq/2sHlSgMUo+TmVRsDpsLAf+q1Z4dxSmZ2SaB8H9fzi/DWACkLkmaEUovEiJVzTmGbBLrhPLVSW7yNu7CbHoFhs1dIqdY4rxKXDe4wUHIJpHLo+iRcphajHZAn42KmYm+4cFVQXE3/" > ./known_hosts
+      - name: Dependencies
+        run: |
+          npm install
+      - name: Build
+        run: |
+          npm run build:client
+          ./node_modules/.bin/next export
+      - name: Setup Nginx
+        run: |
+          cat << EOF > rosti.nginx.conf
+          server {
+            listen 8000;
+
+            root /srv/app/client/;
+            index index.html;
+
+            location / {
+              try_files $uri $uri/ =404;
+            }
+          }        
+          EOF
+          scp -o UserKnownHostsFile=./known_hosts -P $PORT rosti.nginx.conf $USER@$HOST:/srv/conf/nginx.d/app.conf
+          rm rosti.nginx.conf
+      - name: Copy generated page
+        run: |
+          rsync -ave "ssh -o UserKnownHostsFile=./known_hosts -p $PORT" --delete-after --exclude=.git ./client/build/ $USER@$HOST:/srv/app/client/
+      - name: Apply changes to Nginx
+        run: |
+          ssh -o UserKnownHostsFile=./known_hosts -p $PORT $USER@$HOST nginx -s reload

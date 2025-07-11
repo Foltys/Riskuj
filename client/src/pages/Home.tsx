@@ -14,6 +14,7 @@ export default function Home() {
   }, [connectSocket]);
 
   useEffect(() => {
+    console.log("gameId", gameId);
     if (gameId) {
       navigate("/waiting");
     }
