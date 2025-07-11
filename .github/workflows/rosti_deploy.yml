@@ -47,9 +47,32 @@ jobs:
           EOF
           scp -o UserKnownHostsFile=./known_hosts -P $PORT rosti.nginx.conf $USER@$HOST:/srv/conf/nginx.d/app.conf
           rm rosti.nginx.conf
-      - name: Copy generated page
+      - name: Copy client
         run: |
           rsync -ave "ssh -o UserKnownHostsFile=./known_hosts -p $PORT" --delete-after --exclude=.git ./client/build/ $USER@$HOST:/srv/app/client/
+      - name: Setup Supervisord
+        run: |
+          cat << EOF > rosti.app.conf
+          [program:app]
+          command=/srv/bin/primary_tech/node index.js
+          environment=PATH="/srv/bin/primary_tech:/usr/local/bin:/usr/bin:/bin:/srv/.npm-packages/bin"
+          stopasgroup=true
+          directory=/srv/app/server
+          process_name=app
+          autostart=true
+          autorestart=true
+          stdout_logfile=/srv/log/node.log
+          stdout_logfile_maxbytes=2MB
+          stdout_logfile_backups=5
+          stdout_capture_maxbytes=2MB
+          stdout_events_enabled=false
+          redirect_stderr=true
+          EOF
+          scp -o UserKnownHostsFile=./known_hosts -P $PORT rosti.app.conf $USER@$HOST:/srv/conf/supervisor.d/app.conf
+          rm rosti.app.conf
+      - name: Copy server
+        run: |
+          rsync -ave "ssh -o UserKnownHostsFile=./known_hosts -p $PORT" --delete-after --exclude=.git ./server/dist/ $USER@$HOST:/srv/app/server/
       - name: Apply changes to Nginx
         run: |
           ssh -o UserKnownHostsFile=./known_hosts -p $PORT $USER@$HOST nginx -s reload
