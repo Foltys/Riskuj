@@ -54,7 +54,7 @@ jobs:
         run: |
           cat << EOF > rosti.app.conf
           [program:app]
-          command=/srv/bin/primary_tech/node index.js
+          command=/srv/bin/primary_tech/npm start
           environment=PATH="/srv/bin/primary_tech:/usr/local/bin:/usr/bin:/bin:/srv/.npm-packages/bin"
           stopasgroup=true
           directory=/srv/app/server
@@ -72,7 +72,7 @@ jobs:
           rm rosti.app.conf
       - name: Copy server
         run: |
-          rsync -ave "ssh -o UserKnownHostsFile=./known_hosts -p $PORT" --delete-after --exclude=.git ./server/dist/ $USER@$HOST:/srv/app/server/
+          rsync -ave "ssh -o UserKnownHostsFile=./known_hosts -p $PORT" --delete-after --exclude=.git ./server/ $USER@$HOST:/srv/app/server/
       - name: Apply changes to Nginx
         run: |
           ssh -o UserKnownHostsFile=./known_hosts -p $PORT $USER@$HOST nginx -s reload
