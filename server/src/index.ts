@@ -1,4 +1,4 @@
-import { categories, Category, Question } from "./questions";
+import { categories, Category, Question } from "./questions_cs";
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
