@@ -41,7 +41,7 @@ jobs:
             index index.html;
 
             location / {
-              try_files $uri $uri/ =404;
+              try_files \$uri \$uri/ =404;
             }
           }        
           EOF
@@ -54,7 +54,7 @@ jobs:
         run: |
           cat << EOF > rosti.app.conf
           [program:app]
-          command=/srv/bin/primary_tech/npm start
+          command=/srv/bin/primary_tech/node index.js
           environment=PATH="/srv/bin/primary_tech:/usr/local/bin:/usr/bin:/bin:/srv/.npm-packages/bin"
           stopasgroup=true
           directory=/srv/app/server
@@ -70,9 +70,12 @@ jobs:
           EOF
           scp -o UserKnownHostsFile=./known_hosts -P $PORT rosti.app.conf $USER@$HOST:/srv/conf/supervisor.d/app.conf
           rm rosti.app.conf
-      - name: Copy server
-        run: |
-          rsync -ave "ssh -o UserKnownHostsFile=./known_hosts -p $PORT" --delete-after --exclude=.git ./server/ $USER@$HOST:/srv/app/server/
       - name: Apply changes to Nginx
         run: |
           ssh -o UserKnownHostsFile=./known_hosts -p $PORT $USER@$HOST nginx -s reload
+      - name: Copy server
+        run: |
+          rsync -ave "ssh -o UserKnownHostsFile=./known_hosts -p $PORT" --delete-after --exclude=.git ./server/dist/ $USER@$HOST:/srv/app/server/
+      - name: Restart server
+        run: |
+          ssh -o UserKnownHostsFile=./known_hosts -p $PORT $USER@$HOST supervisorctl restart app
