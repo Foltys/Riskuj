@@ -28,6 +28,11 @@ jobs:
       - name: Dependencies
         run: |
           npm install
+      - name: Create env file
+        run: |
+          cat << EOF > ./server/dist/.env
+          GEMINI_API_KEY=${{ secrets.GEMINI_KEY }}
+          EOF
       - name: Build
         run: |
           npm run --workspaces build

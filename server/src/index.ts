@@ -1,10 +1,16 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import { categories, Category, Question } from "./questions_cs";
 import { getQuestionGenerationGuide } from "./guide";
+import { geminiAPI, QuestionGenerationRequest } from "./gemini-api";
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import leven from "leven";
+
+const gApi = geminiAPI(process.env.GEMINI_API_KEY || "");
 
 const PORT = process.env.SERVER_PORT || "3001";
 
@@ -31,6 +37,51 @@ app.get("/api/question-guide", (req, res) => {
     res.type("text/markdown").send(guide);
   } catch (error) {
     res.status(500).json({ error: "Failed to load question generation guide" });
+  }
+});
+
+// API endpoint to generate questions using Gemini
+app.post("/api/generate-questions", async (req, res) => {
+  try {
+    const request: QuestionGenerationRequest = req.body;
+
+    // Validate request
+    if (!request.category || !request.count) {
+      return res.status(400).json({ error: "Category and count are required" });
+    }
+
+    if (request.count < 1 || request.count > 20) {
+      return res.status(400).json({ error: "Count must be between 1 and 20" });
+    }
+
+    const result = await gApi.generateQuestions(request);
+    res.json({
+      success: true,
+      questions: result,
+      request: request,
+    });
+  } catch (error) {
+    console.error("Error generating questions:", error);
+    res.status(500).json({
+      error: "Failed to generate questions",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+});
+
+// API endpoint to test Gemini connection
+app.get("/api/test-gemini", async (req, res) => {
+  try {
+    const isConnected = await gApi.testConnection();
+    res.json({
+      connected: isConnected,
+      hasApiKey: !!process.env.GEMINI_API_KEY,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Failed to test Gemini connection",
+      details: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 });
 

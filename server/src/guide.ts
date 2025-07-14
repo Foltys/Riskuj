@@ -6,7 +6,7 @@ export function getQuestionGenerationGuide(): string {
     // In development, read from the server directory
     if (process.env.NODE_ENV !== "production") {
       return readFileSync(
-        join(__dirname, "..", "question_generation_guide.md"),
+        join(__dirname, ".", "question_generation_guide.md"),
         "utf8"
       );
     }
