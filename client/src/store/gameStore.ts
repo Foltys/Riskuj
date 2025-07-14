@@ -66,7 +66,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { socket } = get();
     if (socket) return; // If socket is already connected, don't create a new one
 
-    const newSocket = io(`http://localhost:3001`);
+    const newSocket = io(`/api`);
     newSocket.connect();
     set({ socket: newSocket });
 
