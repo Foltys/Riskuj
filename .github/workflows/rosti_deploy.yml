@@ -30,7 +30,7 @@ jobs:
           npm install
       - name: Create env file
         run: |
-          cat << EOF > ./server/dist/.env
+          cat << EOF > ./server/.env
           GEMINI_API_KEY=${{ secrets.GEMINI_KEY }}
           EOF
       - name: Build
