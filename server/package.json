@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
-    "build": "ncc build src/index.ts -o dist",
+    "build": "ncc build src/index.ts -o dist && cp src/question_generation_guide.md dist/",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

@@ -1,4 +1,5 @@
 import { categories, Category, Question } from "./questions_cs";
+import { getQuestionGenerationGuide } from "./guide";
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -22,6 +23,16 @@ const io = new Server(httpServer, {
 
 app.use(cors());
 app.use(express.json());
+
+// API endpoint to serve the question generation guide
+app.get("/api/question-guide", (req, res) => {
+  try {
+    const guide = getQuestionGenerationGuide();
+    res.type("text/markdown").send(guide);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to load question generation guide" });
+  }
+});
 
 interface Player {
   id: string;
@@ -123,7 +134,7 @@ io.on("connection", (socket) => {
       // Start 30-second timer
       game.timer = setTimeout(() => {
         io.to(gameId).emit("timeUp", {
-          correctAnswer: question.answer,
+          correctAnswer: question.answers[0],
         });
         game.currentQuestion = null;
         // Move to next player
@@ -155,11 +166,10 @@ io.on("connection", (socket) => {
     );
 
     if (question) {
-      const isCorrect =
-        leven(
-          answer.toLowerCase().trim(),
-          question.answer.toLowerCase().trim()
-        ) <= 2;
+      const isCorrect = question.answers.some((a) => {
+        leven(answer.toLowerCase().trim(), a.toLowerCase().trim()) <=
+          question.leven;
+      });
 
       if (isCorrect) {
         const player = game.players.find((p) => p.id === socket.id);
@@ -169,12 +179,12 @@ io.on("connection", (socket) => {
             playerId: socket.id,
             points: question.points,
             totalPoints: player.points,
-            correctAnswer: question.answer,
+            correctAnswer: question.answers[0],
           });
         }
       } else {
         io.to(gameId).emit("answerIncorrect", {
-          correctAnswer: question.answer,
+          correctAnswer: question.answers[0],
         });
       }
 
