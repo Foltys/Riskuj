@@ -3,7 +3,7 @@ dotenv.config();
 
 import { categories, Category, Question } from "./questions_cs";
 import { getQuestionGenerationGuide } from "./guide";
-import { geminiAPI, QuestionGenerationRequest } from "./gemini-api";
+import { geminiAPI } from "./gemini-api";
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -43,18 +43,14 @@ app.get("/api/question-guide", (req, res) => {
 // API endpoint to generate questions using Gemini
 app.post("/api/generate-questions", async (req, res) => {
   try {
-    const request: QuestionGenerationRequest = req.body;
+    const request: { categoryCount: number } = req.body;
 
     // Validate request
-    if (!request.category || !request.count) {
-      return res.status(400).json({ error: "Category and count are required" });
+    if (!request.categoryCount) {
+      return res.status(400).json({ error: "Category count is required" });
     }
 
-    if (request.count < 1 || request.count > 20) {
-      return res.status(400).json({ error: "Count must be between 1 and 20" });
-    }
-
-    const result = await gApi.generateQuestions(request);
+    const result = await gApi.generateQuestions(request.categoryCount);
     res.json({
       success: true,
       questions: result,
@@ -218,8 +214,10 @@ io.on("connection", (socket) => {
 
     if (question) {
       const isCorrect = question.answers.some((a) => {
-        leven(answer.toLowerCase().trim(), a.toLowerCase().trim()) <=
-          question.leven;
+        return (
+          leven(answer.toLowerCase().trim(), a.toLowerCase().trim()) <=
+          question.leven
+        );
       });
 
       if (isCorrect) {
@@ -287,8 +285,8 @@ app.get("/api/questions", (req, res) => {
   // Shuffle the categories array
   const shuffledCategories = [...categories].sort(() => Math.random() - 0.5);
 
-  // Take first 12 categories
-  const selectedCategories = shuffledCategories.slice(0, 12);
+  // Take first 6 categories
+  const selectedCategories = shuffledCategories.slice(0, 6);
 
   // For each category, ensure it has exactly 6 questions
   const categoriesWithQuestions = selectedCategories.map((category) => ({

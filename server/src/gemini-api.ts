@@ -10,26 +10,19 @@ export interface GeminiResponse {
   }>;
 }
 
-export interface QuestionGenerationRequest {
-  category: string;
-  count: number;
-  difficulty?: "easy" | "medium" | "hard";
-  topics?: string[];
-}
-
 export class GeminiAPI {
   private apiKey: string;
   private baseUrl =
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
   }
 
-  async generateQuestions(request: QuestionGenerationRequest): Promise<string> {
+  async generateQuestions(categoryCount: number): Promise<string> {
     const guide = getQuestionGenerationGuide();
 
-    const prompt = this.buildPrompt(request, guide);
+    const prompt = this.buildPrompt(guide, categoryCount);
 
     try {
       const response = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
@@ -72,67 +65,52 @@ export class GeminiAPI {
         throw new Error("Invalid response from Gemini API");
       }
 
-      return data.candidates[0].content.parts[0].text;
+      const result = data.candidates[0].content.parts[0].text;
+
+      // Strip markdown formatting and clean up the response
+      const cleanedResult = this.cleanJsonResponse(result);
+
+      return cleanedResult;
     } catch (error) {
       console.error("Error generating questions:", error);
       throw error;
     }
   }
 
-  private buildPrompt(
-    request: QuestionGenerationRequest,
-    guide: string
-  ): string {
-    const { category, count, difficulty = "medium", topics = [] } = request;
+  private cleanJsonResponse(response: string): string {
+    // Remove markdown code block formatting
+    let cleaned = response.replace(/```json\n?/g, "");
+    cleaned = cleaned.replace(/```\n?/g, "");
 
-    const difficultyInstructions = {
-      easy: "Focus on basic, well-known facts that most people would know.",
-      medium:
-        "Include moderately challenging questions that require some knowledge.",
-      hard: "Create challenging questions that require deep knowledge of the subject.",
-    };
+    // Remove leading/trailing whitespace
+    cleaned = cleaned.trim();
 
-    const topicsText =
-      topics.length > 0
-        ? `Focus specifically on these topics: ${topics.join(", ")}.`
-        : "";
+    // Additional cleanup for any remaining formatting artifacts
+    cleaned = cleaned.replace(/^\n+|\n+$/g, "");
 
+    return cleaned;
+  }
+
+  private buildPrompt(guide: string, categoryCount: number): string {
     return `
 You are a Czech trivia question generator. Please read the following guide carefully and follow all instructions exactly:
 
 ${guide}
 
-Now generate ${count} questions for the category "${category}" with ${difficulty} difficulty level.
-
-${topicsText}
-
-${difficultyInstructions[difficulty]}
-
 Requirements:
-1. Return ONLY valid TypeScript code that defines an array of Question objects
+1. Return ONLY valid JSON that defines an array of Question objects
 2. Follow the exact schema provided in the guide
 3. Ensure all questions are specific and unambiguous
 4. Use appropriate leven values (0 for exact, 1 for allowing typos)
 5. Include last names for person names in the answers array
 6. Verify all facts are accurate
 7. Questions should be in Czech language
-8. Point values should be between 100-600
+8. Each question has different point value based on difficulty, this value increases by 100 points for each difficulty level starting from 100 points up to 600 points
 
-Format your response like this:
-\`\`\`typescript
-const questions: Question[] = [
-  {
-    id: 1,
-    text: "Your question here?",
-    answers: ["Answer", "Alternative"],
-    leven: 1,
-    points: 100,
-  },
-  // ... more questions
-];
-\`\`\`
+CRITICAL: Return ONLY raw JSON without any markdown formatting or code blocks. DO NOT use backticks or code block markers. Return the response exactly as a JSON string:
+[{"id":1,"name":"Technologie","questions":[{"id":1,"text":"Která česká firma je známá výrobou her DayZ a Arma?","answers":["Bohemia Interactive"],"leven":1,"points":500}]}]
 
-Generate exactly ${count} questions now:
+Generate ${categoryCount} categories with questions now:
 `;
   }
 
