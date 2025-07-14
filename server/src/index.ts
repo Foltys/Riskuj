@@ -14,6 +14,10 @@ const io = new Server(httpServer, {
     origin: `*`,
     methods: ["GET", "POST"],
   },
+  transports: ["websocket", "polling"],
+  allowEIO3: true,
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
 
 app.use(cors());
