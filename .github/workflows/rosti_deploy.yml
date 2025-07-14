@@ -28,14 +28,14 @@ jobs:
       - name: Dependencies
         run: |
           npm install
-      - name: Build
-        run: |
-          npm run --workspaces build
       - name: Create env file
         run: |
           cat << EOF > ./server/dist/.env
           GEMINI_API_KEY=${{ secrets.GEMINI_KEY }}
           EOF
+      - name: Build
+        run: |
+          npm run --workspaces build
       - name: Setup Nginx
         run: |
           cat << EOF > rosti.nginx.conf
