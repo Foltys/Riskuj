@@ -106,8 +106,9 @@ io.on("connection", (socket) => {
 
   socket.on("createGame", (playerName: string) => {
     const gameId = Math.random().toString(36).substring(2, 8);
+    const initialPlayer = { id: socket.id, name: playerName, points: 0 };
     games.set(gameId, {
-      players: [{ id: socket.id, name: playerName, points: 0 }],
+      players: [initialPlayer],
       categories: [],
       currentQuestion: null,
       timer: null,
@@ -115,7 +116,7 @@ io.on("connection", (socket) => {
       currentPlayerId: socket.id,
     });
     socket.join(gameId);
-    socket.emit("gameCreated", { gameId });
+    socket.emit("gameCreated", { gameId, player: initialPlayer });
   });
 
   socket.on("joinGame", ({ gameId, playerName }) => {

@@ -75,6 +75,24 @@ export default function WaitingRoom() {
               Waiting for host to start the game...
             </p>
           )}
+          <button
+            className="w-full mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+              const url = new URL(window.location.origin);
+              url.searchParams.set("gameId", gameId || "");
+              navigator.clipboard.writeText(url.toString());
+              (e.target as HTMLButtonElement).textContent = "Link zkopírován";
+              (e.target as HTMLButtonElement).className =
+                "w-full mt-4 px-4 py-2 bg-green-300 text-white disabled rounded";
+              setTimeout(() => {
+                (e.target as HTMLButtonElement).textContent = "Pozvat kamaráda";
+                (e.target as HTMLButtonElement).className =
+                  "w-full mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600";
+              }, 3000);
+            }}
+          >
+            Pozvat kamaráda
+          </button>
         </div>
       </div>
     </div>

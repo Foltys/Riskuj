@@ -66,13 +66,16 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { socket } = get();
     if (socket) return; // If socket is already connected, don't create a new one
 
-    const newSocket = io({
-      transports: ["websocket", "polling"],
-      forceNew: true,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
+    const newSocket = io(
+      process.env.NODE_ENV === "production" ? "/" : ":3001",
+      {
+        transports: ["websocket", "polling"],
+        forceNew: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+      }
+    );
     newSocket.connect();
     set({ socket: newSocket });
 
@@ -80,8 +83,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       console.log("Connected to server");
     });
 
-    newSocket.on("gameCreated", ({ gameId }) => {
-      set({ gameId });
+    newSocket.on("gameCreated", ({ gameId, player }) => {
+      set({ gameId, players: [player] });
     });
 
     newSocket.on("playerJoined", ({ players }) => {

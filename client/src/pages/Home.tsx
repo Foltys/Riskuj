@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useGameStore } from "../store/gameStore";
 
 export default function Home() {
   const navigate = useNavigate();
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const gameIdFromUrl = params.get("gameId");
   const { createGame, joinGame, connectSocket, gameId } = useGameStore();
   const [playerName, setPlayerName] = useState("");
-  const [gameIdInput, setGameIdInput] = useState("");
+  const [gameIdInput, setGameIdInput] = useState(gameIdFromUrl || "");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -59,7 +62,7 @@ export default function Home() {
                 id="playerName"
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="mt-1 block w-full rounded-md border border-gray-500 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white p-2"
                 placeholder="Enter your name"
               />
             </div>
@@ -95,7 +98,7 @@ export default function Home() {
                   id="gameId"
                   value={gameIdInput}
                   onChange={(e) => setGameIdInput(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="mt-1 block w-full rounded-md border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white p-2"
                   placeholder="Enter game ID"
                 />
               </div>
